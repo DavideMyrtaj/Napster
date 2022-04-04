@@ -1,14 +1,18 @@
 import hashlib, sys, unittest,socket
 from syslog import LOG_INFO
+import random
+import string
 from os import fork
 
-from soupsieve import match
-
 class Server:
+    
+    @staticmethod
+    def session_generator(size=16, chars=string.ascii_uppercase + string.digits):
+        return ''.join(random.choice(chars) for x in range(size))
     @staticmethod
     def Login(ip, porta):
-
-        print("Login: ")
+        
+        client.send(("ALGI"+str(Server.session_generator())).encode())
 
     @staticmethod
     def CercaPeer(sessionID):
