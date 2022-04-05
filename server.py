@@ -1,4 +1,4 @@
-import hashlib, sys, unittest,socket
+import hashlib, sys, unittest,socket, mysql.connector
 from syslog import LOG_INFO
 import random
 import string
@@ -6,13 +6,21 @@ from os import fork
 
 class Server:
     
+
+
     @staticmethod
     def session_generator(size=16, chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for x in range(size))
     @staticmethod
     def Login(ip, porta):
-        
-        client.send(("ALGI"+str(Server.session_generator())).encode())
+        try:
+            _sessionid=Server.session_generator()
+            mycursor.execute(f"INSERT INTO PEER (SESSION_ID, IP, PORTA) VALUES ('{_sessionid}','{ip}','{porta}')")
+            mydb.commit()
+                
+        except mysql.connector.Error as err:
+            _sessionid="0000000000000000"
+        client.send(("ALGI"+_sessionid).encode())
 
     @staticmethod
     def CercaPeer(sessionID):
@@ -38,7 +46,7 @@ class Server:
     def RegistraDownload(md5, sessionID):
         print("Registra Download")
 
-    
+    @staticmethod
     def Parser(pacchetto):
 
         if(pacchetto=="LOGI"):
@@ -58,7 +66,8 @@ class Server:
 
     
     
-
+mydb = mysql.connector.connect(host="localhost",user="root",password="123",database="DIRECTORY")
+mycursor = mydb.cursor()
 sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind(("",50000))

@@ -1,7 +1,5 @@
 import uuid
 import socket, sys
-
-from paramiko import SSHClient
 def prepIp():
     ip=socket.gethostbyname(socket.gethostname())
     ip=ip.split(".")
