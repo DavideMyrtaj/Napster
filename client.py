@@ -45,7 +45,7 @@ def Aggiungi(sessionID, descrizione, filename):
     md5 = calcoloMD5(filename)
     print(f"MD5 del file {filename}: {md5}")
     print(f"Descrizione del file: {descrizione}")
-    client.send(f"ADDF{sessionID}.{md5}.{filename}")
+    client.send(f"ADDF{sessionID}.{md5}.{filename}".encode())
     
 
 client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
