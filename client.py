@@ -72,7 +72,7 @@ if(scelta == "1" or scelta == "aggiungi"):
         Aggiungi(sessionid, i, i)
 
 elif(scelta == "2" or scelta == "cancella"):
-    showFile("/home/nb/Scrivania/Programmi/Python/Napster/")
+    showFile("file_condivisi")
     daCancellare = input("Scegli il file da cancellare: ")
 
 elif(scelta == "3" or scelta == "ricerca"):
