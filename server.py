@@ -7,7 +7,6 @@ import random
 import string
 from os import fork
 
-from client import SendData
 
 class Server:
     
@@ -35,7 +34,7 @@ class Server:
                 
         except mysql.connector.Error as err:
             _sessionid="0000000000000000"
-        SendData("ALGI"+_sessionid)
+        Server.SendData("ALGI"+_sessionid)
 
     @staticmethod
     def CercaPeer(sessionID):
@@ -57,7 +56,7 @@ class Server:
         mycursor.execute(f"SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5='{md5}'")
         count=mycursor.fetchall()
         count=Server.Resize(str(count[0][0]),3)
-        SendData("AADD"+count)
+        Server.SendData("AADD"+count)
         
 
     @staticmethod
