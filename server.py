@@ -1,3 +1,4 @@
+from argparse import _MutuallyExclusiveGroup
 import hashlib, sys, unittest,socket, mysql.connector
 from syslog import LOG_INFO
 import random
@@ -28,7 +29,21 @@ class Server:
 
     @staticmethod
     def Aggiungi(sessionID, md5, descrizione):
-        print("Inserisci il file da aggiungere")
+        try:
+
+            mycursor.execute(f"INSERT INTO FILE (MD5,DESCRIZIONE) VALUES ('{md5}','{descrizione}') ON DUPLICATE KEY UPDATE DESCRIZIONE='{descrizione}'")
+            mydb.commit()
+            mycursor.execute(f"INSERT INTO FILE_PEER (MD5,SESSION_ID) VALUES ('{md5}','{sessionID}')")
+            mydb.commit()
+            print("peer aggiunto per la condivisione del file "+md5)
+            
+        except mysql.connector.Error as err:
+            print("si è verificato il seguente errore "+ err)
+
+        mycursor.execute(f"SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5='{md5}'")
+        count=mycursor.fetchall()
+        print("ok")
+        
 
     @staticmethod
     def Delete(sessionID, md5):
@@ -57,6 +72,7 @@ class Server:
             sessionId=client.recv(16).decode()
             md5=client.recv(32).decode()
             filename=client.recv(100).decode()
+            Server.Aggiungi(sessionId,md5,filename)
         elif(pacchetto=="DELF"):
             sessionId=client.recv(16).decode()
             md5=client.recv(32).decode()
@@ -82,7 +98,7 @@ while True:
         richiesta=client.recv(4).decode()
         Server.Parser(richiesta)
         client.close()
-        exit()
+        
 
 
 

@@ -45,14 +45,21 @@ def Aggiungi(sessionID, descrizione, filename):
     md5 = calcoloMD5(filename)
     print(f"MD5 del file {filename}: {md5}")
     print(f"Descrizione del file: {descrizione}")
-    client.send(f"ADDF{sessionID}.{md5}.{filename}".encode())
+    client=SendData(f"ADDF{sessionID}{md5}{filename}")
     
 
-client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+def SendData(send):
+    client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    client.connect(("localhost",50000))
+    client.send(str(send).encode())
+    return client
+
+
+
 ip,porta = Login("9785")
 
-client.connect(("localhost",50000))
-client.send(f"LOGI{ip}{porta}".encode())
+
+client=SendData(f"LOGI{ip}{porta}")
 client.recv(4)
 sessionid=client.recv(16).decode()
 print(f"Il tuo sessionID = {sessionid}")
@@ -60,9 +67,9 @@ scelta = input("Scegli azione da svolgere: \n1)Aggiungi file\n2)altre opzioni\n"
 if(scelta == "1" or scelta == "aggiungi"):
     file = input("Inserisci il nome del file: ")
     descrizione = input("Inserisci una breve descrizione del file: ")
-    Aggiungi(sessionid, descrizione, file)
+    Aggiungi(sessionid, "file di prova", "server.py")
 
 
-print(sessionid)
+
 client.close()
 
