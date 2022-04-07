@@ -1,7 +1,10 @@
+
 from fileinput import filename
 import uuid
 import socket, sys
 import hashlib
+import uuid
+import socket, sys
 
 def prepIp():
     ip=socket.gethostbyname(socket.gethostname())
@@ -32,6 +35,7 @@ def calcoloMD5(filename):
     stringaMD5 = stringaMD5.hexdigest().upper()
     return stringaMD5
 
+
 def Login(porta):
     ip=prepIp()
     porta=prepPort(porta)
@@ -46,6 +50,7 @@ def Aggiungi(sessionID, descrizione, filename):
 
 client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 ip,porta = Login("9785")
+
 client.connect(("localhost",50000))
 client.send(f"LOGI{ip}{porta}".encode())
 client.recv(4)
@@ -57,4 +62,7 @@ if(scelta == "1" or scelta == "aggiungi"):
     descrizione = input("Inserisci una breve descrizione del file: ")
     Aggiungi(sessionid, descrizione, file)
 
+
+print(sessionid)
 client.close()
+
