@@ -56,7 +56,7 @@ def showFile(path):
 
 ip,porta = Login("9785")
 
-path = "/home/nb/Scrivania/Programmi/Python/Napster/"
+path = "file_condivisi"
 
 client=SendData(f"LOGI{ip}{porta}")
 client.recv(4)
