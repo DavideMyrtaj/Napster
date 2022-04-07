@@ -41,7 +41,7 @@ def Login(porta):
     porta=prepPort(porta)
     return ip,porta
 
-def Aggiungi(sessionID, descrizione, filename):
+def Aggiungi(sessionID, descrizione, filename): #da modificare ---> il metodo manda tutti i file in una volta sola
     md5 = calcoloMD5(filename)
     print(f"MD5 del file {filename}: {md5}")
     print(f"Descrizione del file: {descrizione}")
@@ -54,6 +54,7 @@ def SendData(send):
     client.send(str(send).encode())
     return client
 
+#def showFile(dirName):
 
 
 ip,porta = Login("9785")
@@ -63,13 +64,26 @@ client=SendData(f"LOGI{ip}{porta}")
 client.recv(4)
 sessionid=client.recv(16).decode()
 print(f"Il tuo sessionID = {sessionid}")
-scelta = input("Scegli azione da svolgere: \n1)Aggiungi file\n2)altre opzioni\n")
-if(scelta == "1" or scelta == "aggiungi"):
+scelta = input("Scegli azione da svolgere: \n1)Aggiungi file\n2)Cancella file\n3)Ricerca file\n4)Ricevi file\n5)Logout")
+if(scelta == "1" or scelta == "login"):
     file = input("Inserisci il nome del file: ")
     descrizione = input("Inserisci una breve descrizione del file: ")
     Aggiungi(sessionid, "file di prova", "server.py")
+elif(scelta == "2" or scelta == "cancella"):
+    daCancellare = input("Scegli il file da cancellare: ")
 
+elif(scelta == "3" or scelta == "ricerca"):
+    daCercare = input("scegli il file da cercare")
 
+elif(scelta == "4" or scelta == "ricevi"):
+    daRicevere = input("Scegli il file da ricevere")
+
+elif(scelta == "5" or scelta == "logout"):
+    print("Inizio logout in corso")
+
+else:
+    print("Opzione non valida")
+    exit(1)
 
 client.close()
 
