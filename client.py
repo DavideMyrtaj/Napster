@@ -38,13 +38,11 @@ def Login(porta):
     porta=prepPort(porta)
     return ip,porta
 
-def Aggiungi(sessionID, descrizione, filename): #da modificare ---> il metodo manda tutti i file in una volta sola
+def Aggiungi(sessionID, descrizione, filename):
     md5 = calcoloMD5(filename)
     print(f"MD5 del file {filename}: {md5}")
-    print(f"Descrizione del file: {descrizione}")
-    client=SendData(f"ADDF{sessionID}{md5}{filename}")
+    client=SendData(f"ADDF{sessionID}{md5}{descrizione}")
     
-
 def SendData(send):
     client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     client.connect(("localhost",50000))
@@ -58,19 +56,23 @@ def showFile(path):
 
 ip,porta = Login("9785")
 
+path = "/home/nb/Scrivania/Programmi/Python/Napster/"
 
 client=SendData(f"LOGI{ip}{porta}")
 client.recv(4)
 sessionid=client.recv(16).decode()
 print(f"Il tuo sessionID = {sessionid}")
+
 scelta = input("Scegli azione da svolgere: \n1)Aggiungi file\n2)Cancella file\n3)Ricerca file\n4)Ricevi file\n5)Logout")
-if(scelta == "1" or scelta == "login"):
+if(scelta == "1" or scelta == "aggiungi"):
     file = input("Inserisci il nome del file: ")
     descrizione = input("Inserisci una breve descrizione del file: ")
-    Aggiungi(sessionid, "file di prova", "server.py")
+    files = os.listdir(path)
+    for i in files:
+        Aggiungi(sessionid, i, i)
 
 elif(scelta == "2" or scelta == "cancella"):
-    showFile("path")
+    showFile("/home/nb/Scrivania/Programmi/Python/Napster/")
     daCancellare = input("Scegli il file da cancellare: ")
 
 elif(scelta == "3" or scelta == "ricerca"):
