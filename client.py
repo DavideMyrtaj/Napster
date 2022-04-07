@@ -1,10 +1,7 @@
-
-from fileinput import filename
 import uuid
 import socket, sys
 import hashlib
-import uuid
-import socket, sys
+import os
 
 def prepIp():
     ip=socket.gethostbyname(socket.gethostname())
@@ -54,8 +51,10 @@ def SendData(send):
     client.send(str(send).encode())
     return client
 
-#def showFile(dirName):
-
+def showFile(path):
+    files = os.listdir(path)
+    for i in files:
+        print(i)
 
 ip,porta = Login("9785")
 
@@ -69,7 +68,9 @@ if(scelta == "1" or scelta == "login"):
     file = input("Inserisci il nome del file: ")
     descrizione = input("Inserisci una breve descrizione del file: ")
     Aggiungi(sessionid, "file di prova", "server.py")
+
 elif(scelta == "2" or scelta == "cancella"):
+    showFile("path")
     daCancellare = input("Scegli il file da cancellare: ")
 
 elif(scelta == "3" or scelta == "ricerca"):
