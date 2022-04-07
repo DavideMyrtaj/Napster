@@ -1,13 +1,27 @@
 from argparse import _MutuallyExclusiveGroup
+from ctypes import resize
 import hashlib, sys, unittest,socket, mysql.connector
+from telnetlib import STATUS
 from syslog import LOG_INFO
 import random
 import string
 from os import fork
 
+from client import SendData
+
 class Server:
     
+    @staticmethod
+    def SendData(send):
+        client.send(str(send).encode())
 
+    @staticmethod
+    def Resize(stringa, dim):
+        tmp=""
+        for n in range(0,dim-len(stringa)):
+            tmp+="0"
+        tmp+=stringa
+        return tmp
 
     @staticmethod
     def session_generator(size=16, chars=string.ascii_uppercase + string.digits):
@@ -21,7 +35,7 @@ class Server:
                 
         except mysql.connector.Error as err:
             _sessionid="0000000000000000"
-        client.send(("ALGI"+_sessionid).encode())
+        SendData("ALGI"+_sessionid)
 
     @staticmethod
     def CercaPeer(sessionID):
@@ -42,7 +56,8 @@ class Server:
 
         mycursor.execute(f"SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5='{md5}'")
         count=mycursor.fetchall()
-        print("ok")
+        count=Server.Resize(str(count[0][0]),3)
+        SendData("AADD"+count)
         
 
     @staticmethod
