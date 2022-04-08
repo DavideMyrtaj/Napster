@@ -1,6 +1,7 @@
 from argparse import _MutuallyExclusiveGroup
 from ctypes import resize
 import hashlib, sys, unittest,socket, mysql.connector
+from itertools import count
 from telnetlib import STATUS
 from syslog import LOG_INFO
 import random
@@ -29,7 +30,8 @@ class Server:
     def Login(ip, porta):
         try:
             _sessionid=Server.session_generator()
-            mycursor.execute(f"INSERT INTO PEER (SESSION_ID, IP, PORTA) VALUES ('{_sessionid}','{ip}','{porta}')")
+            val=(_sessionid,ip,porta)
+            mycursor.execute("INSERT INTO PEER (SESSION_ID, IP, PORTA) VALUES (%s,%s,%s)",val)
             mydb.commit()
                 
         except mysql.connector.Error as err:
@@ -43,17 +45,19 @@ class Server:
     @staticmethod
     def Aggiungi(sessionID, md5, descrizione):
         try:
-
-            mycursor.execute(f"INSERT INTO FILE (MD5,DESCRIZIONE) VALUES ('{md5}','{descrizione}') ON DUPLICATE KEY UPDATE DESCRIZIONE='{descrizione}'")
+            val=(md5,descrizione,descrizione)
+            mycursor.execute("INSERT INTO FILE (MD5,DESCRIZIONE) VALUES (%s,%s) ON DUPLICATE KEY UPDATE DESCRIZIONE=%s",val)
             mydb.commit()
-            mycursor.execute(f"INSERT INTO FILE_PEER (MD5,SESSION_ID) VALUES ('{md5}','{sessionID}')")
+            val=(md5,sessionID)
+            mycursor.execute("INSERT INTO FILE_PEER (MD5,SESSION_ID) VALUES (%s,%s)",val)
             mydb.commit()
             print("peer aggiunto per la condivisione del file "+md5)
             
         except mysql.connector.Error as err:
             print("si è verificato il seguente errore "+ err)
 
-        mycursor.execute(f"SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5='{md5}'")
+        val=(md5)
+        mycursor.execute("SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5=%s",val)
         count=mycursor.fetchall()
         count=Server.Resize(str(count[0][0]),3)
         Server.SendData("AADD"+count)
@@ -61,11 +65,39 @@ class Server:
 
     @staticmethod
     def Delete(sessionID, md5):
-        print("Inserisci il sessionID da eliminare")
+        val=(sessionID,md5)
+        mycursor.execute("DELETE FROM FILE_PEER WHERE SESSION_ID=%s AND MD5=%s",val)
+        mydb.commit()
+        mycursor.execute(f"SELECT COUNT(*) FROM FIE_PEER WHERE MD5='{md5}'")
+        count=mycursor.fetchall()[0][0]
+        if(int(count)==0):
+            mycursor.execute(f"DELETE FROM FILE WHERE MD5='{md5}'")
+            mydb.commit()
+
+        count=Server.Resize(str(count),3)
+        Server.SendData("ADEL"+count)
+        
 
     @staticmethod
-    def Ricerca(sessionID, testo):
-        print("Inserisci il file da cercare")
+    def Ricerca(sessionID, descrizione):
+        val=(descrizione)
+        mycursor.execute("SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%%%s%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ",descrizione)
+        listmd5=mycursor.fetchall()
+        send="AFIN"+Server.Resize(str(len(listmd5)),3)
+        if(len(listmd5)==0):
+            Server.SendData(send)
+            return
+        for n in range(0,len(listmd5)):
+            send+=f"{listmd5[n][0]}{listmd5[n][1]}{Server.Resize(listmd5[n][2],3)}"
+            mycursor.execute(f"SELECT p.IP, p.PORTA FROM FILE_PEER fp INNER JOIN PEER p ON p.SESSION_ID = fp.SESSION_ID WHERE fp.MD5={listmd5[n][0]}")
+            listapeer=mycursor.fetchall()
+            for i in range(0,len(listapeer)):
+                send+=f"{listapeer[i][0]}{listapeer[i][1]}"
+
+        Server.SendData(send)
+        
+
+
 
     @staticmethod
     def Logout(sessionID):
@@ -90,9 +122,11 @@ class Server:
         elif(pacchetto=="DELF"):
             sessionId=client.recv(16).decode()
             md5=client.recv(32).decode()
+            Server.Delete(sessionId,md5)
         elif(pacchetto=="FIND"):
             sessionId=client.recv(16).decode()
-            ricerca=client.recv(20).decode()
+            descrizione=client.recv(20).decode()
+            Server.Ricerca(sessionId, descrizione)
 
     
     
