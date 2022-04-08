@@ -48,11 +48,29 @@ def SendData(send):
     client.connect(("localhost",50000))
     client.send(str(send).encode())
     return client
+def Ricerca(sessionid, descrizione):
+    client=SendData(f"FIND"+sessionid+descrizione)
+    client.recv(4)
+    nmd5=int(client.recv(3).decode())
+    print(f"ci sono {nmd5} file che combaciano con '{descrizione}'\n")
+    for n in range(0,nmd5):
+        md5=client.recv(32).decode()
+        name=client.recv(100).decode()
+        tot=int(client.recv(3).decode())
+        print(f"MD5: {md5} | Nome: {name}\n")
+        for i in range(0,tot):
+            print(f"\tIP: {client.recv(15).decode()} | PORTA: {int(client.recv(5).decode())}")
+    
 
 def showFile(path):
     files = os.listdir(path)
     for i in files:
         print(i)
+
+
+
+
+
 
 ip,porta = Login("9785")
 
@@ -66,7 +84,6 @@ print(f"Il tuo sessionID = {sessionid}")
 scelta = input("Scegli azione da svolgere: \n1)Aggiungi file\n2)Cancella file\n3)Ricerca file\n4)Ricevi file\n5)Logout")
 if(scelta == "1" or scelta == "aggiungi"):
     file = input("Inserisci il nome del file: ")
-    descrizione = input("Inserisci una breve descrizione del file: ")
     files = os.listdir(path)
     for i in files:
         Aggiungi(sessionid, i, i)
@@ -77,6 +94,7 @@ elif(scelta == "2" or scelta == "cancella"):
 
 elif(scelta == "3" or scelta == "ricerca"):
     daCercare = input("scegli il file da cercare")
+    Ricerca(sessionid,daCercare)
 
 elif(scelta == "4" or scelta == "ricevi"):
     daRicevere = input("Scegli il file da ricevere")

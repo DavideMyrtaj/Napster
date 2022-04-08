@@ -80,15 +80,15 @@ class Server:
 
     @staticmethod
     def Ricerca(sessionID, descrizione):
-        val=(descrizione)
-        mycursor.execute("SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%%%s%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ",descrizione)
+        
+        mycursor.execute(f"SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%{descrizione}%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ")
         listmd5=mycursor.fetchall()
         send="AFIN"+Server.Resize(str(len(listmd5)),3)
         if(len(listmd5)==0):
             Server.SendData(send)
             return
         for n in range(0,len(listmd5)):
-            send+=f"{listmd5[n][0]}{listmd5[n][1]}{Server.Resize(listmd5[n][2],3)}"
+            send+=f"{listmd5[n][0]}{listmd5[n][1]}{Server.Resize(str(listmd5[n][2]),3)}"
             mycursor.execute(f"SELECT p.IP, p.PORTA FROM FILE_PEER fp INNER JOIN PEER p ON p.SESSION_ID = fp.SESSION_ID WHERE fp.MD5={listmd5[n][0]}")
             listapeer=mycursor.fetchall()
             for i in range(0,len(listapeer)):
