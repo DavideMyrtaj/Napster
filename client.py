@@ -38,14 +38,14 @@ def calcoloMD5(filename):
 def Login(porta):
     ip=prepIp()
     porta=Resize(porta,5)
-    client=SendData(f"LOGI{ip}{porta}","localhost",50000)
+    client=SendData(f"LOGI{ip}{porta}",ipDirectory,50000)
     client.recv(4)
     return client.recv(16).decode(),porta
 #metodo che invia al server la richiesta di condivisione del file
 def Aggiungi(sessionID,filename):
     md5 = calcoloMD5(f"{percorso}/{filename}")
     print(f"MD5 del file {filename}: {md5}")
-    client=SendData(f"ADDF{sessionID}{md5}{filename.ljust(100)}","localhost",50000)
+    client=SendData(f"ADDF{sessionID}{md5}{filename.ljust(100)}",ipDirectory,50000)
     client.recv(4)
     return client.recv(3).decode(),filename,md5
     
@@ -55,11 +55,12 @@ def SendData(send,ip,port):
         client.connect((ip,port))
     except:
         print("il server non è raggiungibile, riprova più tardi")
+        exit()
         
     client.send(str(send).encode())
     return client
 def Ricerca(sessionid, descrizione):
-    client=SendData(f"FIND"+sessionid+descrizione,"localhost",50000)
+    client=SendData(f"FIND"+sessionid+descrizione,ipDirectory,50000)
     client.recv(4)
     nmd5=int(client.recv(3).decode())
     print(f"ci sono {nmd5} file che combaciano con '{descrizione}'\n")
@@ -132,6 +133,7 @@ def DownloadFilePeer(ip,port,md5):
         client.connect((ip,port))
     except:
         print("il server non è raggiungibile, riprova più tardi")
+        
         return
     client.recv(4)
     pid=0
