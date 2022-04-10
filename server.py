@@ -1,5 +1,4 @@
 from argparse import _MutuallyExclusiveGroup
-from ctypes import resize
 import hashlib, sys, unittest,socket, mysql.connector
 from itertools import count
 from telnetlib import STATUS
@@ -16,6 +15,7 @@ class Server:
         client.send(str(send).encode())
 
     @staticmethod
+    #aggiunge n 0 prima della stringa data come parametro fino ad avere una lunghezza uguale a dim
     def Resize(stringa, dim):
         tmp=""
         for n in range(0,dim-len(stringa)):
@@ -56,7 +56,7 @@ class Server:
         except mysql.connector.Error as err:
             print("si è verificato il seguente errore "+ err)
 
-        val=(md5)
+        val=(md5,)
         mycursor.execute("SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5=%s",val)
         count=mycursor.fetchall()
         count=Server.Resize(str(count[0][0]),3)

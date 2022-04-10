@@ -1,7 +1,10 @@
 import uuid
 import socket, sys
 import hashlib
-import os
+import threading
+import os,random
+from os import fork
+from os.path import exists
 
 def prepIp():
     ip=socket.gethostbyname(socket.gethostname())
@@ -13,13 +16,12 @@ def prepIp():
         group+=ip[n]
         ip[n]=group
     return ".".join(ip)
-def prepPort(porta):
-    tmp=""
-    for n in range(0,5-len(porta)):
-        tmp+="0"
-    tmp+=porta
-    
-    return tmp
+def Resize(stringa, dim):
+        tmp=""
+        for n in range(0,dim-len(stringa)):
+            tmp+="0"
+        tmp+=stringa
+        return tmp
 
 def calcoloMD5(filename):
     file = open(filename, 'rb')
@@ -35,21 +37,25 @@ def calcoloMD5(filename):
 
 def Login(porta):
     ip=prepIp()
-    porta=prepPort(porta)
-    return ip,porta
-
-def Aggiungi(sessionID, descrizione, filename):
-    md5 = calcoloMD5(filename)
+    porta=Resize(porta,5)
+    client=SendData(f"LOGI{ip}{porta}","localhost",50000)
+    client.recv(4)
+    return client.recv(16).decode(),porta
+#metodo che invia al server la richiesta di condivisione del file
+def Aggiungi(sessionID,filename):
+    md5 = calcoloMD5(f"{percorso}/{filename}")
     print(f"MD5 del file {filename}: {md5}")
-    client=SendData(f"ADDF{sessionID}{md5}{descrizione}")
+    client=SendData(f"ADDF{sessionID}{md5}{filename}","localhost",50000)
+    client.recv(4)
+    return client.recv(3).decode(),filename,md5
     
-def SendData(send):
+def SendData(send,ip,port):
     client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    client.connect(("localhost",50000))
+    client.connect((ip,port))
     client.send(str(send).encode())
     return client
 def Ricerca(sessionid, descrizione):
-    client=SendData(f"FIND"+sessionid+descrizione)
+    client=SendData(f"FIND"+sessionid+descrizione,"localhost",50000)
     client.recv(4)
     nmd5=int(client.recv(3).decode())
     print(f"ci sono {nmd5} file che combaciano con '{descrizione}'\n")
@@ -60,6 +66,7 @@ def Ricerca(sessionid, descrizione):
         print(f"MD5: {md5} | Nome: {name}\n")
         for i in range(0,tot):
             print(f"\tIP: {client.recv(15).decode()} | PORTA: {int(client.recv(5).decode())}")
+    client.close()
     
 
 def showFile(path):
@@ -67,44 +74,121 @@ def showFile(path):
     for i in files:
         print(i)
 
+def InvioFile(peer,file):
+    send="ARET"
+    if(not exists(percorso)):
+        peer.send("ARET"+"000000")
+        return
+    fd = os.open(filename, os.O_RDONLY)
+    dim=os.path.getsize(file)
+    filechunk=dim//4096
+    last=dim%4096
+    if(last!=0):filechunk+=1
+    send+=Resize(filechunk,6)
+    peer.send(send.encode())
+    send=""
+    for n in range(0,dim//4096):
+        send+="04096"
+        send+=os.read(fd,4096).decode()
+        peer.send(send.encode())
+        send=""
+    if(last!=0):
+        send+=Resize(last,5)
+        send+=os.read(fd,4096).decode()
+        peer.send(send.encode())
+    fd.close()
+    peer.close()
+    
+
+    
+
+
+def AvvioAscoltoServer(porta):
+    sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(("",int(porta)))
+    sock.listen(10)
+    while True:
+        client,addr= sock.accept()
+        pid=0
+        if(pid==0):
+            richiesta=client.recv(4).decode()
+            if(richiesta=="RETR"):
+                md5=client.recv(32).decode()
+                for n in range(0,len(listaFileCondivisi)):
+                    if(listaFileCondivisi[n][1]==md5):
+                        InvioFile(client,percorso+"/"+listaFileCondivisi[n][0])
+                        break
+            client.close()
+
+def DownloadFilePeer(ip,port,md5):
+    send="RETR"+md5
+    try:
+        client=SendData(send,ip,port)
+    except:
+        print("si è verificato un errore, verifica i dati inseriti")
+        return
+    client.recv(4)
+    chunk=client.recv(6).decode()
+    fd = os.open("download/"+md5, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
+    for n in range(0,chunk):
+        buf=client.recv(int(client.recv(5).decode()))
+        os.write(fd,buf)
+    os.close(fd)
+    print("ricevuto il file "+md5)
+    client.close()
+
+
+def AggiornaListaLocale():
+    files = os.listdir(percorso)
 
 
 
 
 
-ip,porta = Login("9785")
 
-path = "file_condivisi"
 
-client=SendData(f"LOGI{ip}{porta}")
-client.recv(4)
-sessionid=client.recv(16).decode()
+sessionid, porta=Login(str(random.choice(range(49152,65536))))
+if(sessionid=="0000000000000000"):
+    print("Si è verificato un errore durante il processo di Log-in")
+    exit()
+
 print(f"Il tuo sessionID = {sessionid}")
 
-scelta = input("Scegli azione da svolgere: \n1)Aggiungi file\n2)Cancella file\n3)Ricerca file\n4)Ricevi file\n5)Logout")
-if(scelta == "1" or scelta == "aggiungi"):
-    file = input("Inserisci il nome del file: ")
-    files = os.listdir(path)
-    for i in files:
-        Aggiungi(sessionid, i, i)
 
-elif(scelta == "2" or scelta == "cancella"):
-    showFile("file_condivisi")
-    daCancellare = input("Scegli il file da cancellare: ")
+server_client=threading.Thread(target=AvvioAscoltoServer,args=(porta,))
+server_client.start()
+listaFileCondivisi=[]
+percorso = "file_condivisi"
 
-elif(scelta == "3" or scelta == "ricerca"):
-    daCercare = input("scegli il file da cercare")
-    Ricerca(sessionid,daCercare)
 
-elif(scelta == "4" or scelta == "ricevi"):
-    daRicevere = input("Scegli il file da ricevere")
 
-elif(scelta == "5" or scelta == "logout"):
-    print("Inizio logout in corso")
+while True:
+    scelta = input("Scegli azione da svolgere: \n1)Aggiorna file condivisi\n2)Ricerca file\n3)Ricevi file\n4)Logout\n")
+    if(scelta == "1"):
+        files = os.listdir(percorso)
+        for i in files:
+            nfile,filename,md5=Aggiungi(sessionid,i)
+            print(f"sono presenti {int(nfile)} copie del file {filename}")
+            listaFileCondivisi.append((filename,md5))
 
-else:
-    print("Opzione non valida")
-    exit(1)
+    elif(scelta == "2"):
+        daCercare = input("scegli il file da cercare")
+        Ricerca(sessionid,daCercare)
 
-client.close()
+    elif(scelta == "3"):
+        ipPeer=input("Inserisci l'ip del peer dal quale scaricare")
+        portaPeer=input("Inserisci la porta del peer")
+        md5Download=input("inserisci l'md5 del file da scaricare")
+        pid=fork()
+        if(pid==0): DownloadFilePeer(ipPeer,portaPeer,md5Download)
+
+
+    elif(scelta == "4"):
+        print("Inizio logout in corso")
+
+    else:
+        print("Opzione non valida")
+        exit(1)
+
 
