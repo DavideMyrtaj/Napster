@@ -45,13 +45,17 @@ def Login(porta):
 def Aggiungi(sessionID,filename):
     md5 = calcoloMD5(f"{percorso}/{filename}")
     print(f"MD5 del file {filename}: {md5}")
-    client=SendData(f"ADDF{sessionID}{md5}{filename}","localhost",50000)
+    client=SendData(f"ADDF{sessionID}{md5}{filename.ljust(100)}","localhost",50000)
     client.recv(4)
     return client.recv(3).decode(),filename,md5
     
 def SendData(send,ip,port):
     client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    client.connect((ip,port))
+    try:
+        client.connect((ip,port))
+    except:
+        print("il server non è raggiungibile, riprova più tardi")
+        
     client.send(str(send).encode())
     return client
 def Ricerca(sessionid, descrizione):
@@ -123,20 +127,24 @@ def AvvioAscoltoServer(porta):
 
 def DownloadFilePeer(ip,port,md5):
     send="RETR"+md5
+    client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     try:
-        client=SendData(send,ip,port)
+        client.connect((ip,port))
     except:
-        print("si è verificato un errore, verifica i dati inseriti")
+        print("il server non è raggiungibile, riprova più tardi")
         return
     client.recv(4)
-    chunk=client.recv(6).decode()
-    fd = os.open("download/"+md5, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
-    for n in range(0,chunk):
-        buf=client.recv(int(client.recv(5).decode()))
-        os.write(fd,buf)
-    os.close(fd)
-    print("ricevuto il file "+md5)
-    client.close()
+    pid=0
+    if(pid==0):
+        chunk=client.recv(6).decode()
+        fd = os.open("download/"+md5, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
+        for n in range(0,chunk):
+            buf=client.recv(int(client.recv(5).decode()))
+            os.write(fd,buf)
+        os.close(fd)
+        print("ricevuto il file "+md5)
+        client.close()
+        exit()
 
 
 def AggiornaListaLocale():
@@ -146,7 +154,7 @@ def AggiornaListaLocale():
 
 
 
-
+ipDirectory="192.168.1.79"
 
 sessionid, porta=Login(str(random.choice(range(49152,65536))))
 if(sessionid=="0000000000000000"):
@@ -170,7 +178,7 @@ while True:
         for i in files:
             nfile,filename,md5=Aggiungi(sessionid,i)
             print(f"sono presenti {int(nfile)} copie del file {filename}")
-            listaFileCondivisi.append((filename,md5))
+            listaFileCondivisi.append([filename,md5])
 
     elif(scelta == "2"):
         daCercare = input("scegli il file da cercare")
@@ -180,8 +188,7 @@ while True:
         ipPeer=input("Inserisci l'ip del peer dal quale scaricare")
         portaPeer=input("Inserisci la porta del peer")
         md5Download=input("inserisci l'md5 del file da scaricare")
-        pid=fork()
-        if(pid==0): DownloadFilePeer(ipPeer,portaPeer,md5Download)
+        DownloadFilePeer(ipPeer,portaPeer,md5Download)
 
 
     elif(scelta == "4"):
@@ -189,6 +196,5 @@ while True:
 
     else:
         print("Opzione non valida")
-        exit(1)
 
 

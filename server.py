@@ -54,7 +54,7 @@ class Server:
             print("peer aggiunto per la condivisione del file "+md5)
             
         except mysql.connector.Error as err:
-            print("si è verificato il seguente errore "+ err)
+            print("si è verificato il seguente errore "+ err.msg)
 
         val=(md5,)
         mycursor.execute("SELECT COUNT(SESSION_ID) FROM FILE_PEER WHERE MD5=%s",val)
@@ -89,7 +89,7 @@ class Server:
             return
         for n in range(0,len(listmd5)):
             send+=f"{listmd5[n][0]}{listmd5[n][1]}{Server.Resize(str(listmd5[n][2]),3)}"
-            mycursor.execute(f"SELECT p.IP, p.PORTA FROM FILE_PEER fp INNER JOIN PEER p ON p.SESSION_ID = fp.SESSION_ID WHERE fp.MD5={listmd5[n][0]}")
+            mycursor.execute(f"SELECT p.IP, p.PORTA FROM FILE_PEER fp INNER JOIN PEER p ON p.SESSION_ID = fp.SESSION_ID WHERE fp.MD5='{listmd5[n][0]}'")
             listapeer=mycursor.fetchall()
             for i in range(0,len(listapeer)):
                 send+=f"{listapeer[i][0]}{listapeer[i][1]}"
