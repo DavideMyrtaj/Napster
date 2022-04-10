@@ -3,7 +3,7 @@ import socket, sys
 import hashlib
 import threading
 import os,random
-from os import fork
+#from os import fork
 from os.path import exists
 
 def prepIp():
