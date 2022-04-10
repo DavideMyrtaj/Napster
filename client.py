@@ -3,7 +3,7 @@ import socket, sys
 import hashlib
 import threading
 import os,random
-from os import fork
+#from os import fork
 from os.path import exists
 
 def prepIp():
@@ -130,7 +130,7 @@ def DownloadFilePeer(ip,port,md5):
     send="RETR"+md5
     client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     try:
-        client.connect((ip,port))
+        client.connect((ip,int(port)))
     except:
         print("il server non è raggiungibile, riprova più tardi")
         
