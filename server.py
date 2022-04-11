@@ -1,6 +1,5 @@
 from argparse import _MutuallyExclusiveGroup
 import hashlib, sys, unittest,socket, mysql.connector
-from itertools import count
 from telnetlib import STATUS
 from syslog import LOG_INFO
 import random
@@ -68,7 +67,7 @@ class Server:
         val=(sessionID,md5)
         mycursor.execute("DELETE FROM FILE_PEER WHERE SESSION_ID=%s AND MD5=%s",val)
         mydb.commit()
-        mycursor.execute(f"SELECT COUNT(*) FROM FIE_PEER WHERE MD5='{md5}'")
+        mycursor.execute(f"SELECT COUNT(*) FROM FILE_PEER WHERE MD5='{md5}'")
         count=mycursor.fetchall()[0][0]
         if(int(count)==0):
             mycursor.execute(f"DELETE FROM FILE WHERE MD5='{md5}'")
@@ -101,6 +100,13 @@ class Server:
 
     @staticmethod
     def Logout(sessionID):
+        send="ALGO"
+        mycursor.execute(f"SELECT COUNT(*) FROM FILE_PEER WHERE SESSION_ID='{sessionID}'")
+        filecondivisi=(mycursor.fetchall())[0][0]
+        send+=Server.Resize(str(filecondivisi),3)
+        mycursor.execute(f"DELETE FROM PEER WHERE SESSION_ID='{sessionID}'")
+        mydb.commit()
+        Server.SendData(send)
         print("Logout")
 
     @staticmethod
@@ -127,6 +133,9 @@ class Server:
             sessionId=client.recv(16).decode()
             descrizione=client.recv(20).decode()
             Server.Ricerca(sessionId, descrizione)
+        elif(pacchetto=="LOGO"):
+            sessionId=client.recv(16).decode()
+            Server.Logout(sessionId)
 
     
     
@@ -134,14 +143,14 @@ mydb = mysql.connector.connect(host="localhost",user="root",password="123",datab
 mycursor = mydb.cursor()
 sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sock.bind(("",50000))
+sock.bind(("",80))
 
 sock.listen(50)
 
 while True:
     print("server in ascolto....\n")
     client,addr= sock.accept()
-    pid=0
+    pid=fork()
     if(pid==0):
         richiesta=client.recv(4).decode()
         Server.Parser(richiesta)
