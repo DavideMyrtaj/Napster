@@ -1,3 +1,4 @@
+import signal
 import uuid
 import socket, sys
 import hashlib
@@ -6,8 +7,7 @@ import os,random
 #from os import fork
 from os.path import exists
 
-def prepIp():
-    ip=socket.gethostbyname(socket.gethostname())
+def prepIp(ip):
     ip=ip.split(".")
     for n in range(0,len(ip)):
         group=""
@@ -36,7 +36,7 @@ def calcoloMD5(filename):
 
 
 def Login(porta):
-    ip=prepIp()
+    ip=prepIp(socket.gethostbyname(socket.gethostname()))
     porta=Resize(str(porta),5)
     client=SendData(f"LOGI{ip}{porta}",ipDirectory,80)
     client.recv(4)
@@ -137,6 +137,9 @@ def DownloadFilePeer(ip,port,md5,namefile):
         print("il server non è raggiungibile, riprova più tardi")
         
         return
+    client2=SendData("RREG"+sessionid+md5+prepIp(ip)+Resize(str(port),5),ipDirectory,80)
+    client2.recv(4)
+    print(f"il file è già stato scaricato {client2.recv(5).decode()} volte")
     client.send(send.encode())
     client.recv(4)
     pid=os.fork()
@@ -149,6 +152,7 @@ def DownloadFilePeer(ip,port,md5,namefile):
             os.write(fd,buf)
         os.close(fd)
         print("ricevuto il file "+namefile)
+
         client.close()
         exit()
 
@@ -183,8 +187,11 @@ def Logout():
     client=SendData(send,ipDirectory,80)
     client.recv(4)
     nfile=client.recv(3).decode()
-    return nfile
+    print("Log out effettuato\nSono stati rimossi dalla condivisione "+nfile+" file")
+    os.abort()
         
+def Ctrl_c(signal,frame):
+    Logout()
         
             
 
@@ -195,8 +202,8 @@ def Logout():
 
 
 
-#ipDirectory=sys.argv[1]
-ipDirectory="192.168.1.110"
+ipDirectory=str(sys.argv[1])
+#ipDirectory="192.168.1.110"
 sessionid, porta=Login(str(random.choice(range(49152,65536))))
 if(sessionid=="0000000000000000"):
     print("Si è verificato un errore durante il processo di Log-in")
@@ -204,6 +211,7 @@ if(sessionid=="0000000000000000"):
 
 print(f"Il tuo sessionID = {sessionid}")
 
+signal.signal(signal.SIGINT, Ctrl_c)
 
 server_client=threading.Thread(target=AvvioAscoltoServer,args=(porta,))
 server_client.start()
@@ -232,8 +240,8 @@ while True:
 
 
     elif(scelta == "4"):
-        print("Log out effettuato\nSono stati rimossi dalla condivisione "+int(Logout())+" file")
-        os.abort()
+        Logout()
+        
     else:
         print("Opzione non valida")
 

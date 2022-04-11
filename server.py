@@ -1,5 +1,6 @@
 from argparse import _MutuallyExclusiveGroup
 import hashlib, sys, unittest,socket, mysql.connector
+from xmlrpc.client import SERVER_ERROR
 from telnetlib import STATUS
 from syslog import LOG_INFO
 import random
@@ -107,11 +108,17 @@ class Server:
         mycursor.execute(f"DELETE FROM PEER WHERE SESSION_ID='{sessionID}'")
         mydb.commit()
         Server.SendData(send)
-        print("Logout")
+        
 
     @staticmethod
-    def RegistraDownload(md5, sessionID):
-        print("Registra Download")
+    def RegistraDownload(sessionid,md5,ipdown,portdown):
+        val=(sessionid,md5,ipdown,portdown)
+        mycursor.execute("INSERT INTO DOWNLOAD (SESSION_ID,MD5,IP,PORT) VALUES ('%s','%s','%s','%s')",val)
+        mydb.commit()
+        mycursor.execute(f"SELECT COUNT(*) FROM DOWNLOAD WHERE MD5='{md5}'")
+        totdownload=list(mycursor.fetchall())[0][0]
+        send="ARRE"+Server.Resize(totdownload,5)
+        Server.SendData(send)
 
     @staticmethod
     def Parser(pacchetto):
@@ -136,6 +143,12 @@ class Server:
         elif(pacchetto=="LOGO"):
             sessionId=client.recv(16).decode()
             Server.Logout(sessionId)
+        elif(pacchetto=="RREG"):
+            sessionId=client.recv(16).decode()
+            md5=client.recv(32).decode()
+            ipdown=client.recv(15).decode()
+            portdown=client.recv(5).decode()
+            Server.RegistraDownload(sessionId,md5,ipdown,portdown)
 
     
     
