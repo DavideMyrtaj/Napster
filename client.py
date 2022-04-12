@@ -141,9 +141,6 @@ def DownloadFilePeer(ip,port,md5,namefile):
         print("il server non è raggiungibile, riprova più tardi")
         
         return
-    client2=SendData("RREG"+sessionid+md5+prepIp(ip)+Resize(str(port),5),ipDirectory,80)
-    client2.recv(4)
-    print(f"il file è stato scaricato {int(client2.recv(5).decode())} volte")
     client.send(send.encode())
     client.recv(4)
     pid=os.fork()
@@ -159,6 +156,10 @@ def DownloadFilePeer(ip,port,md5,namefile):
             os.write(fd,buf)
         os.close(fd)
         print("ricevuto il file "+namefile)
+        client2=SendData("RREG"+sessionid+md5+prepIp(ip)+Resize(str(port),5),ipDirectory,80)
+        client2.recv(4)
+        print(f"il file è stato scaricato {int(client2.recv(5).decode())} volte")
+        client2.close()
 
         client.close()
         exit()
