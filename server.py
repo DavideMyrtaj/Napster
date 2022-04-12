@@ -1,4 +1,3 @@
-from argparse import _MutuallyExclusiveGroup
 import hashlib, sys, unittest,socket, mysql.connector
 from xmlrpc.client import SERVER_ERROR
 from telnetlib import STATUS
@@ -113,11 +112,11 @@ class Server:
     @staticmethod
     def RegistraDownload(sessionid,md5,ipdown,portdown):
         val=(sessionid,md5,ipdown,portdown)
-        mycursor.execute("INSERT INTO DOWNLOAD (SESSION_ID,MD5,IP,PORT) VALUES ('%s','%s','%s','%s')",val)
+        mycursor.execute("INSERT INTO DOWNLOAD (SESSION_ID,MD5,IP,PORT) VALUES (%s,%s,%s,%s)",val)
         mydb.commit()
         mycursor.execute(f"SELECT COUNT(*) FROM DOWNLOAD WHERE MD5='{md5}'")
         totdownload=list(mycursor.fetchall())[0][0]
-        send="ARRE"+Server.Resize(totdownload,5)
+        send="ARRE"+Server.Resize(str(totdownload),5)
         Server.SendData(send)
 
     @staticmethod
@@ -168,6 +167,7 @@ while True:
         richiesta=client.recv(4).decode()
         Server.Parser(richiesta)
         client.close()
+        exit()
         
 
 
