@@ -4,6 +4,7 @@ import socket, sys
 import hashlib
 import threading
 import os,random
+from pathlib import Path
 #from os import fork
 from os.path import exists
 
@@ -83,8 +84,8 @@ def showFile(path):
 
 def InvioFile(peer,file):
     send="ARET"
-    if(not exists(percorso)):
-        peer.send("ARET"+"000000")
+    if(not Path(percorso).is_file()):
+        peer.send(("ARET"+"000000").encode())
         return
     fd = os.open(file, os.O_RDONLY)
     dim=os.path.getsize(file)
@@ -104,7 +105,6 @@ def InvioFile(peer,file):
         send+=os.read(fd,4096).decode()
         peer.send(send.encode())
     os.close(fd)
-    peer.close()
     
 
     
@@ -118,6 +118,7 @@ def AvvioAscoltoServer(porta):
     while True:
         client,addr= sock.accept()
         pid=os.fork()
+        #pid=0
         if(pid==0):
             richiesta=client.recv(4).decode()
             if(richiesta=="RETR"):
@@ -126,7 +127,9 @@ def AvvioAscoltoServer(porta):
                     if(listaFileCondivisi[n][1]==md5):
                         InvioFile(client,percorso+"/"+listaFileCondivisi[n][0])
                         break
+                client.send(("ARET"+"000000").encode())
             client.close()
+            exit()
 
 def DownloadFilePeer(ip,port,md5,namefile):
     send="RETR"+md5
@@ -139,12 +142,15 @@ def DownloadFilePeer(ip,port,md5,namefile):
         return
     client2=SendData("RREG"+sessionid+md5+prepIp(ip)+Resize(str(port),5),ipDirectory,80)
     client2.recv(4)
-    print(f"il file è già stato scaricato {client2.recv(5).decode()} volte")
+    print(f"il file è stato scaricato {int(client2.recv(5).decode())} volte")
     client.send(send.encode())
     client.recv(4)
     pid=os.fork()
     if(pid==0):
         chunk=int(client.recv(6).decode())
+        if(chunk==0):
+            print("il file è vuoto oppure non è più in condivisione\n")
+            exit()
         if(exists("download/"+namefile)): os.remove("download/"+namefile)
         fd = os.open("download/"+namefile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
         for n in range(0,chunk):
@@ -228,7 +234,7 @@ while True:
         listaNuova.clear()
 
     elif(scelta == "2"):
-        daCercare = input("scegli il file da cercare")
+        daCercare = input("scegli il file da cercare\n")
         Ricerca(sessionid,daCercare)
 
     elif(scelta == "3"):

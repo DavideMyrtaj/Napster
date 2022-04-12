@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 import hashlib, sys, unittest,socket, mysql.connector
 from xmlrpc.client import SERVER_ERROR
 from telnetlib import STATUS
@@ -152,8 +153,8 @@ class Server:
 
     
     
-mydb = mysql.connector.connect(host="localhost",user="root",password="123",database="DIRECTORY")
-mycursor = mydb.cursor()
+mydb=0
+mycursor = 0
 sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind(("",80))
@@ -165,6 +166,8 @@ while True:
     client,addr= sock.accept()
     pid=fork()
     if(pid==0):
+        mydb = mysql.connector.connect(host="localhost",user="root",password="123",database="DIRECTORY")
+        mycursor = mydb.cursor()
         richiesta=client.recv(4).decode()
         Server.Parser(richiesta)
         client.close()
