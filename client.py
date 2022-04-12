@@ -84,7 +84,7 @@ def showFile(path):
 
 def InvioFile(peer,file):
     send="ARET"
-    if(not Path(percorso).is_file()):
+    if(not Path(file).is_file()):
         peer.send(("ARET"+"000000").encode())
         return
     fd = os.open(file, os.O_RDONLY)
@@ -130,6 +130,7 @@ def AvvioAscoltoServer(porta):
                 client.send(("ARET"+"000000").encode())
             client.close()
             exit()
+            
 
 def DownloadFilePeer(ip,port,md5,namefile):
     send="RETR"+md5

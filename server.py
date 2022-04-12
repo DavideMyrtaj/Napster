@@ -1,7 +1,5 @@
-from asyncio.windows_events import NULL
 import hashlib, sys, unittest,socket, mysql.connector
 from xmlrpc.client import SERVER_ERROR
-from telnetlib import STATUS
 from syslog import LOG_INFO
 import random
 import string
