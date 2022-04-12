@@ -237,6 +237,9 @@ while True:
 
     elif(scelta == "2"):
         daCercare = input("scegli il file da cercare\n")
+        if(len(daCercare)<1 or len(daCercare)>20):
+            print("contenuto non valido")
+            continue
         Ricerca(sessionid,daCercare)
 
     elif(scelta == "3"):
