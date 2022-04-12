@@ -124,7 +124,7 @@ def AvvioAscoltoServer(porta):
             if(richiesta=="RETR"):
                 md5=client.recv(32).decode()
                 for n in range(0,len(listaFileCondivisi)):
-                    if(listaFileCondivisi[n][1]==md5):
+                    if(listaFileCondivisi[n][1]==md5 and Path(percorso+"/"+listaFileCondivisi[n][0]).is_file()==True and calcoloMD5(percorso+"/"+listaFileCondivisi[n][0])==md5):
                         InvioFile(client,percorso+"/"+listaFileCondivisi[n][0])
                         break
                 client.send(("ARET"+"000000").encode())
