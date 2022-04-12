@@ -89,6 +89,7 @@ class Server:
             return
         for n in range(0,len(listmd5)):
             send+=f"{listmd5[n][0]}{listmd5[n][1]}{Server.Resize(str(listmd5[n][2]),3)}"
+            #ordina per file con più download
             mycursor.execute(f"SELECT p.IP, p.PORTA FROM FILE_PEER fp INNER JOIN PEER p ON p.SESSION_ID = fp.SESSION_ID WHERE fp.MD5='{listmd5[n][0]}'")
             listapeer=mycursor.fetchall()
             for i in range(0,len(listapeer)):
