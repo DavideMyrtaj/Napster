@@ -17,6 +17,13 @@ def prepIp(ip):
         group+=ip[n]
         ip[n]=group
     return ".".join(ip)
+
+def LocalIp():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip=s.getsockname()[0]
+    s.close()
+    return str(ip)
 def Resize(stringa, dim):
         tmp=""
         for n in range(0,dim-len(stringa)):
@@ -37,7 +44,7 @@ def calcoloMD5(filename):
 
 
 def Login(porta):
-    ip=prepIp(socket.gethostbyname(socket.gethostname()))
+    ip=prepIp(LocalIp())
     porta=Resize(str(porta),5)
     client=SendData(f"LOGI{ip}{porta}",ipDirectory,80)
     client.recv(4)
