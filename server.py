@@ -1,4 +1,5 @@
 import hashlib, sys, unittest,socket, mysql.connector
+from logging.config import valid_ident
 from xmlrpc.client import SERVER_ERROR
 from syslog import LOG_INFO
 import random
@@ -79,7 +80,8 @@ class Server:
     @staticmethod
     def Ricerca(sessionID, descrizione):
          #ordina per file con più download
-        mycursor.execute(f"SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%{descrizione}%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ")
+        val=(descrizione,)
+        mycursor.execute("SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%%%s%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ",val)
         listmd5=mycursor.fetchall()
         send="AFIN"+Server.Resize(str(len(listmd5)),3)
         if(len(listmd5)==0):
@@ -122,32 +124,37 @@ class Server:
     @staticmethod
     def Parser(pacchetto):
 
-        if(pacchetto=="LOGI"):
-            ip=client.recv(15).decode()
-            porta=client.recv(5).decode()
-            Server.Login(ip,porta)
-        elif(pacchetto=="ADDF"):
-            sessionId=client.recv(16).decode()
-            md5=client.recv(32).decode()
-            filename=client.recv(100).decode()
-            Server.Aggiungi(sessionId,md5,filename)
-        elif(pacchetto=="DELF"):
-            sessionId=client.recv(16).decode()
-            md5=client.recv(32).decode()
-            Server.Delete(sessionId,md5)
-        elif(pacchetto=="FIND"):
-            sessionId=client.recv(16).decode()
-            descrizione=client.recv(20).decode()
-            Server.Ricerca(sessionId, descrizione)
-        elif(pacchetto=="LOGO"):
-            sessionId=client.recv(16).decode()
-            Server.Logout(sessionId)
-        elif(pacchetto=="RREG"):
-            sessionId=client.recv(16).decode()
-            md5=client.recv(32).decode()
-            ipdown=client.recv(15).decode()
-            portdown=client.recv(5).decode()
-            Server.RegistraDownload(sessionId,md5,ipdown,portdown)
+        try:
+
+            if(pacchetto=="LOGI"):
+                ip=client.recv(15).decode()
+                porta=client.recv(5).decode()
+                Server.Login(ip,porta)
+            elif(pacchetto=="ADDF"):
+                sessionId=client.recv(16).decode()
+                md5=client.recv(32).decode()
+                filename=client.recv(100).decode()
+                Server.Aggiungi(sessionId,md5,filename)
+            elif(pacchetto=="DELF"):
+                sessionId=client.recv(16).decode()
+                md5=client.recv(32).decode()
+                Server.Delete(sessionId,md5)
+            elif(pacchetto=="FIND"):
+                sessionId=client.recv(16).decode()
+                descrizione=client.recv(20).decode()
+                Server.Ricerca(sessionId, descrizione)
+            elif(pacchetto=="LOGO"):
+                sessionId=client.recv(16).decode()
+                Server.Logout(sessionId)
+            elif(pacchetto=="RREG"):
+                sessionId=client.recv(16).decode()
+                md5=client.recv(32).decode()
+                ipdown=client.recv(15).decode()
+                portdown=client.recv(5).decode()
+                Server.RegistraDownload(sessionId,md5,ipdown,portdown)
+        except socket.socket.error as err:
+            print(err)
+
 
     
     
