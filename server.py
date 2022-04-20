@@ -1,5 +1,4 @@
 import hashlib, sys, unittest,socket, mysql.connector
-from logging.config import valid_ident
 from xmlrpc.client import SERVER_ERROR
 from syslog import LOG_INFO
 import random
@@ -80,8 +79,8 @@ class Server:
     @staticmethod
     def Ricerca(sessionID, descrizione):
          #ordina per file con più download
-        val=(descrizione,)
-        mycursor.execute("SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%%%s%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ",val)
+        
+        mycursor.execute(f"SELECT f.MD5, f.DESCRIZIONE, COUNT(f.MD5) AS TOT FROM FILE f INNER JOIN FILE_PEER fp ON fp.MD5=f.MD5 WHERE f.DESCRIZIONE LIKE '%{descrizione}%' GROUP BY (f.MD5) ORDER BY (TOT) DESC ")
         listmd5=mycursor.fetchall()
         send="AFIN"+Server.Resize(str(len(listmd5)),3)
         if(len(listmd5)==0):
