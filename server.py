@@ -170,7 +170,7 @@ while True:
     client,addr= sock.accept()
     pid=fork()
     if(pid==0):
-        mydb = mysql.connector.connect(host="localhost",user="root",password="123",database="DIRECTORY")
+        mydb = mysql.connector.connect(host="localhost",user="admin",password="1234",database="DIRECTORY")
         mycursor = mydb.cursor()
         richiesta=client.recv(4).decode()
         Server.Parser(richiesta)

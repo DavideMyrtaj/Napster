@@ -104,13 +104,16 @@ def InvioFile(peer,file):
     send=""
     for n in range(0,dim//4096):
         send+="04096"
-        send+=os.read(fd,4096).decode()
         peer.send(send.encode())
+        
+        send=os.read(fd,4096)
+        peer.send(send)
         send=""
     if(last!=0):
         send+=Resize(str(last),5)
-        send+=os.read(fd,4096).decode()
         peer.send(send.encode())
+        send=os.read(fd,4096)
+        peer.send(send)
     os.close(fd)
     
 
